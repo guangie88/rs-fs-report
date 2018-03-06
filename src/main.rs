@@ -45,7 +45,11 @@ fn stats_to_storage<P>(path: P, stats: &FsStats) -> Storage
 where
     P: AsRef<str>,
 {
-    StorageBuilder::default().path(path.as_ref()).build()
+    StorageBuilder::default()
+        .path(path.as_ref())
+        .capacity(stats.total_space())
+        .used(stats.total_space() - stats.free_space())
+        .build()
 }
 
 fn create_and_check_fluent<'a>(

@@ -40,15 +40,30 @@ pub struct Error {
     inner: Context<ErrorKind>,
 }
 
-#[derive(Debug, Fail)]
+#[derive(Debug, Fail, Getters)]
 #[fail(display = "{{ path: {:?}, inner: {} }}", path, inner)]
 pub struct PathError<E>
 where
     E: Fail,
 {
-    pub path: PathBuf,
+    path: PathBuf,
     #[cause]
-    pub inner: E,
+    inner: E,
+}
+
+impl<E> PathError<E>
+where
+    E: Fail,
+{
+    pub fn new<P>(path: P, inner: E) -> PathError<E>
+    where
+        P: Into<PathBuf>,
+    {
+        PathError {
+            path: path.into(),
+            inner,
+        }
+    }
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
