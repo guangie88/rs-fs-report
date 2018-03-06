@@ -1,23 +1,21 @@
 use serde_humantime;
 use std::time::Duration;
-use super::krb5;
 
 #[derive(StructOpt, Debug)]
-#[structopt(name = "rs-hdfs-report-conf",
-            about = "Configuration for Rust hdfs-report")]
+#[structopt(name = "rs-fs-report-conf",
+            about = "Configuration for Rust fs-report")]
 pub struct ArgConf {
     #[structopt(short = "c", long = "conf",
-                default_value = "config/rs-hdfs-report.toml",
+                default_value = "config/rs-fs-report.toml",
                 help = "Configuration file path")]
     pub conf: String,
 }
 
 #[derive(Deserialize, Debug)]
-pub struct Config<'a> {
+pub struct Config {
     pub fluentd: FluentdConfig,
     pub general: GeneralConfig,
-    pub hdfs: HdfsConfig,
-    pub kinit: KInitConfig<'a>,
+    pub fs: FsConfig,
 }
 
 #[derive(Deserialize, Debug)]
@@ -38,12 +36,6 @@ pub struct GeneralConfig {
 }
 
 #[derive(Deserialize, Debug)]
-pub struct HdfsConfig {
+pub struct FsConfig {
     pub path: String,
-}
-
-#[derive(Deserialize, Debug)]
-pub struct KInitConfig<'a> {
-    pub login: String,
-    pub auth: krb5::Auth<'a>,
 }

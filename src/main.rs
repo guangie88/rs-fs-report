@@ -5,6 +5,8 @@ extern crate derive_getters;
 #[macro_use]
 extern crate failure;
 extern crate fruently;
+extern crate fs2;
+extern crate json_collection;
 #[macro_use]
 extern crate log;
 extern crate log4rs;
@@ -29,13 +31,22 @@ mod util;
 use conf::{ArgConf, Config};
 use error::{ErrorKind, Result};
 use failure::ResultExt;
+use fs2::FsStats;
 use fruently::fluent::Fluent;
 use fruently::forwardable::JsonForwardable;
 use fruently::retry_conf::RetryConf;
+use json_collection::{Storage, StorageBuilder};
 use std::path::Path;
 use std::process;
 use std::thread;
 use structopt::StructOpt;
+
+fn stats_to_storage<P>(path: P, stats: &FsStats) -> Storage
+where
+    P: AsRef<str>,
+{
+    StorageBuilder::default().path(path.as_ref()).build()
+}
 
 fn create_and_check_fluent<'a>(
     conf: &'a Config,
@@ -59,7 +70,7 @@ fn create_and_check_fluent<'a>(
 
     fluent
         .clone()
-        .post("rs-hdfs-report-log-initialization")
+        .post("rs-fs-report-log-initialization")
         .context(ErrorKind::FluentInitCheck)?;
 
     Ok(fluent)
@@ -67,14 +78,8 @@ fn create_and_check_fluent<'a>(
 
 fn run_impl(conf: &Config) -> Result<()> {
     let fluent = create_and_check_fluent(conf)?;
-
-    let krb5 = Krb5::new()?;
-    let hdfs = Hdfs::new()?;
-
-    krb5.kinit(&conf.kinit.login, &conf.kinit.auth)?;
-    debug!("Kerberos kinit is successful");
-
-    let storage = hdfs.df("/")?;
+    let stats = fs2::statvfs(&conf.fs.path).context(ErrorKind::Statvfs)?;
+    let storage = stats_to_storage(&conf.fs.path, &stats);
 
     fluent
         .clone()
@@ -97,7 +102,7 @@ fn run(conf: &Config) -> Result<()> {
     }
 }
 
-fn init<'a>() -> Result<Config<'a>> {
+fn init() -> Result<Config> {
     let arg_conf = ArgConf::from_args();
 
     let conf: Config = toml::from_str(&util::read_from_file(&arg_conf.conf)?)
