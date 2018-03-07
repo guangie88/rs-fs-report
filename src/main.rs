@@ -1,11 +1,11 @@
 #![cfg_attr(feature = "cargo-clippy", deny(warnings))]
 
 #[macro_use]
-extern crate derive_getters;
-#[macro_use]
 extern crate failure;
 extern crate fruently;
 extern crate fs2;
+#[macro_use]
+extern crate getset;
 extern crate json_collection;
 #[macro_use]
 extern crate log;
@@ -52,9 +52,7 @@ where
         .build()
 }
 
-fn create_and_check_fluent<'a>(
-    conf: &'a Config,
-) -> Result<Fluent<'a, &'a String>> {
+fn create_and_check_fluent(conf: &Config) -> Result<Fluent<&String>> {
     let fluent_conf = RetryConf::new()
         .max(conf.fluentd.try_count)
         .multiplier(conf.fluentd.multiplier);
