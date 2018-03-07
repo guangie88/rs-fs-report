@@ -40,13 +40,14 @@ pub struct Error {
     inner: Context<ErrorKind>,
 }
 
-#[derive(Debug, Fail, Getters)]
+#[derive(Debug, Fail)]
 #[fail(display = "{{ path: {:?}, inner: {} }}", path, inner)]
 pub struct PathError<E>
 where
     E: Fail,
 {
     path: PathBuf,
+
     #[cause]
     inner: E,
 }

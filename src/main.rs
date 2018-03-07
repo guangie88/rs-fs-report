@@ -4,8 +4,6 @@
 extern crate failure;
 extern crate fruently;
 extern crate fs2;
-#[macro_use]
-extern crate getset;
 extern crate json_collection;
 #[macro_use]
 extern crate log;
@@ -20,16 +18,12 @@ extern crate structopt;
 extern crate structopt_derive;
 extern crate toml;
 
-#[cfg(test)]
-#[macro_use]
-extern crate indoc;
-
 mod conf;
 mod error;
 mod util;
 
 use conf::{ArgConf, Config};
-use error::{ErrorKind, Result};
+use error::{ErrorKind, PathError, Result};
 use failure::ResultExt;
 use fs2::FsStats;
 use fruently::fluent::Fluent;
@@ -78,9 +72,26 @@ fn create_and_check_fluent(conf: &Config) -> Result<Fluent<&String>> {
     Ok(fluent)
 }
 
+fn read_config_file<P>(conf_path: P) -> Result<Config>
+where
+    P: AsRef<Path>,
+{
+    let conf_path = conf_path.as_ref();
+
+    let config: Config = toml::from_str(&util::read_from_file(conf_path)?)
+        .map_err(|e| PathError::new(conf_path, e))
+        .context(ErrorKind::TomlConfigParse)?;
+
+    Ok(config)
+}
+
 fn run_impl(conf: &Config) -> Result<()> {
     let fluent = create_and_check_fluent(conf)?;
-    let stats = fs2::statvfs(&conf.fs.path).context(ErrorKind::Statvfs)?;
+
+    let stats = fs2::statvfs(&conf.fs.path)
+        .map_err(|e| PathError::new(&conf.fs.path, e))
+        .context(ErrorKind::Statvfs)?;
+
     let storage = stats_to_storage(&conf.fs.path, &stats);
 
     fluent
@@ -106,13 +117,12 @@ fn run(conf: &Config) -> Result<()> {
 
 fn init() -> Result<Config> {
     let arg_conf = ArgConf::from_args();
-
-    let conf: Config = toml::from_str(&util::read_from_file(&arg_conf.conf)?)
-        .context(ErrorKind::TomlConfigParse)?;
+    let conf = read_config_file(&arg_conf.conf)?;
 
     match conf.general.log_conf_path {
         Some(ref log_conf_path) => {
             log4rs::init_file(log_conf_path, Default::default())
+                .map_err(|e| PathError::new(log_conf_path, e))
                 .context(ErrorKind::SpecializedLoggerInit)?
         }
         None => simple_logger::init().context(ErrorKind::DefaultLoggerInit)?,
