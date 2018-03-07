@@ -104,3 +104,24 @@ impl From<Context<ErrorKind>> for Error {
         Error { inner }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use failure::Fail;
+
+    #[cfg_attr(feature = "cargo-clippy", allow(empty_line_after_outer_attr))]
+    #[derive(Copy, Clone, Eq, PartialEq, Debug, Fail)]
+    #[fail(display = "Fake error kind")]
+    pub struct FakeErrorKind;
+
+    #[derive(Debug, Fail)]
+    #[fail(display = "Fake error")]
+    struct FakeError;
+
+    #[test]
+    fn test_path_error_trait() {
+        PathError::new("Fake path", FakeError).context(FakeErrorKind);
+    }
+}
