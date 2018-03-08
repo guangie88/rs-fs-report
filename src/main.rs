@@ -93,6 +93,7 @@ fn run_impl(conf: &Config) -> Result<()> {
         .context(ErrorKind::Statvfs)?;
 
     let storage = stats_to_storage(&conf.fs.path, &stats);
+    debug!("```\n{:#?}```", storage);
 
     fluent
         .clone()
