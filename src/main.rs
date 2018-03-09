@@ -1,6 +1,5 @@
 #![cfg_attr(feature = "cargo-clippy", deny(warnings))]
 
-#[macro_use]
 extern crate failure;
 extern crate fruently;
 extern crate fs2;
@@ -8,29 +7,26 @@ extern crate json_collection;
 #[macro_use]
 extern crate log;
 extern crate log4rs;
+extern crate mega_coll;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
-extern crate serde_humantime;
 extern crate simple_logger;
 extern crate structopt;
 #[macro_use]
 extern crate structopt_derive;
-extern crate toml;
 
 mod conf;
-mod error;
-mod util;
 
 use conf::{ArgConf, Config};
-use error::{ErrorKind, PathError, Result};
+use mega_coll::error::{ErrorKind, Result};
+use mega_coll::error::custom::PathError;
+use mega_coll::util::app::{create_and_check_fluent, read_config_file};
+use mega_coll::util::fs::lock_file;
 use failure::ResultExt;
 use fs2::FsStats;
-use fruently::fluent::Fluent;
 use fruently::forwardable::JsonForwardable;
-use fruently::retry_conf::RetryConf;
 use json_collection::{Storage, StorageBuilder};
-use std::path::Path;
 use std::process;
 use std::thread;
 use structopt::StructOpt;
@@ -46,47 +42,11 @@ where
         .build()
 }
 
-fn create_and_check_fluent(conf: &Config) -> Result<Fluent<&String>> {
-    let fluent_conf = RetryConf::new()
-        .max(conf.fluentd.try_count)
-        .multiplier(conf.fluentd.multiplier);
-
-    let fluent_conf = match conf.fluentd.store_file_path {
-        Some(ref store_file_path) => {
-            fluent_conf.store_file(Path::new(store_file_path).to_owned())
-        }
-        None => fluent_conf,
-    };
-
-    let fluent = Fluent::new_with_conf(
-        &conf.fluentd.address,
-        conf.fluentd.tag.as_str(),
-        fluent_conf,
-    );
-
-    fluent
-        .clone()
-        .post("rs-fs-report-log-initialization")
-        .context(ErrorKind::FluentInitCheck)?;
-
-    Ok(fluent)
-}
-
-fn read_config_file<P>(conf_path: P) -> Result<Config>
-where
-    P: AsRef<Path>,
-{
-    let conf_path = conf_path.as_ref();
-
-    let config: Config = toml::from_str(&util::read_from_file(conf_path)?)
-        .map_err(|e| PathError::new(conf_path, e))
-        .context(ErrorKind::TomlConfigParse)?;
-
-    Ok(config)
-}
-
 fn run_impl(conf: &Config) -> Result<()> {
-    let fluent = create_and_check_fluent(conf)?;
+    let fluent = create_and_check_fluent(
+        &conf.fluentd,
+        "rs-fs-report-log-initialization",
+    )?;
 
     let stats = fs2::statvfs(&conf.fs.path)
         .map_err(|e| PathError::new(&conf.fs.path, e))
@@ -105,7 +65,7 @@ fn run_impl(conf: &Config) -> Result<()> {
 
 fn run(conf: &Config) -> Result<()> {
     // to check if the process is already running as another PID
-    let _flock = util::lock_file(&conf.general.lock_file)?;
+    let _flock = lock_file(&conf.general.lock_file)?;
 
     match conf.general.repeat_delay {
         Some(repeat_delay) => loop {
@@ -118,7 +78,7 @@ fn run(conf: &Config) -> Result<()> {
 
 fn init() -> Result<Config> {
     let arg_conf = ArgConf::from_args();
-    let conf = read_config_file(&arg_conf.conf)?;
+    let conf: Config = read_config_file(&arg_conf.conf)?;
 
     match conf.general.log_conf_path {
         Some(ref log_conf_path) => {
