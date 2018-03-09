@@ -18,10 +18,11 @@ extern crate structopt_derive;
 
 mod conf;
 
-use conf::{ArgConf, Config};
+use conf::{ArgConfig, Config};
 use mega_coll::error::{ErrorKind, Result};
 use mega_coll::error::custom::PathError;
-use mega_coll::util::app::{create_and_check_fluent, read_config_file};
+use mega_coll::util::app::{create_and_check_fluent, init_config,
+                           print_run_status};
 use mega_coll::util::fs::lock_file;
 use failure::ResultExt;
 use fs2::FsStats;
@@ -29,7 +30,6 @@ use fruently::forwardable::JsonForwardable;
 use json_collection::{Storage, StorageBuilder};
 use std::process;
 use std::thread;
-use structopt::StructOpt;
 
 fn stats_to_storage<P>(path: P, stats: &FsStats) -> Storage
 where
@@ -69,40 +69,15 @@ fn run(conf: &Config) -> Result<()> {
 
     match conf.general.repeat_delay {
         Some(repeat_delay) => loop {
-            print_run_status(&run_impl(conf));
+            print_run_status(&run_impl(conf), "Session completed!");
             thread::sleep(repeat_delay)
         },
         None => run_impl(conf),
     }
 }
 
-fn init() -> Result<Config> {
-    let arg_conf = ArgConf::from_args();
-    let conf: Config = read_config_file(&arg_conf.conf)?;
-
-    match conf.general.log_conf_path {
-        Some(ref log_conf_path) => {
-            log4rs::init_file(log_conf_path, Default::default())
-                .map_err(|e| PathError::new(log_conf_path, e))
-                .context(ErrorKind::SpecializedLoggerInit)?
-        }
-        None => simple_logger::init().context(ErrorKind::DefaultLoggerInit)?,
-    }
-
-    Ok(conf)
-}
-
-fn print_run_status(res: &Result<()>) {
-    match *res {
-        Ok(_) => info!("Session completed!"),
-        Err(ref e) => {
-            error!("{}", e);
-        }
-    }
-}
-
 fn main() {
-    let conf_res = init();
+    let conf_res = init_config::<ArgConfig, Config>();
 
     if let Err(ref e) = conf_res {
         eprintln!("{}", e);
@@ -114,7 +89,7 @@ fn main() {
         run(&conf)
     });
 
-    print_run_status(&res);
+    print_run_status(&res, "Program completed!");
 
     if res.is_err() {
         process::exit(1);

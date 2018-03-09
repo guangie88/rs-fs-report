@@ -283,7 +283,7 @@ dependencies = [
 [[package]]
 name = "mega-coll"
 version = "0.1.0"
-source = "git+https://github.com/guangie88/rs-mega-coll.git?branch=init#779205eae690bb16428d024e71513776d04e6825"
+source = "git+https://github.com/guangie88/rs-mega-coll.git?branch=init#806cadccd47551cf63f18a7bc80151905a7b2325"
 dependencies = [
  "failure 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "failure_derive 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -297,6 +297,7 @@ dependencies = [
  "serde-humantime 0.1.1 (git+https://github.com/tailhook/serde-humantime.git?rev=f76450e)",
  "serde_derive 1.0.27 (registry+https://github.com/rust-lang/crates.io-index)",
  "simple_logger 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "structopt 0.2.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "toml 0.4.5 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
