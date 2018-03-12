@@ -3,7 +3,6 @@
 extern crate failure;
 extern crate fruently;
 extern crate fs2;
-extern crate json_collection;
 #[macro_use]
 extern crate log;
 extern crate log4rs;
@@ -21,13 +20,13 @@ mod conf;
 use conf::{ArgConfig, Config};
 use mega_coll::error::{ErrorKind, Result};
 use mega_coll::error::custom::PathError;
+use mega_coll::json::{Storage, StorageBuilder};
 use mega_coll::util::app::{create_and_check_fluent, init_config,
                            print_run_status};
 use mega_coll::util::fs::lock_file;
 use failure::ResultExt;
 use fs2::FsStats;
 use fruently::forwardable::JsonForwardable;
-use json_collection::{Storage, StorageBuilder};
 use std::process;
 use std::thread;
 
