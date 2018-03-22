@@ -9,12 +9,12 @@ fruently = "=0.10.0"
 fs2 = "=0.4.3"
 log = "=0.4.1"
 log4rs = "=0.8.0"
-mega-coll = { git = "https://github.com/guangie88/rs-mega-coll.git", tag = "v0.2.0" }
-serde = "=1.0.27"
-serde_derive = "=1.0.27"
+mega-coll = { git = "https://github.com/guangie88/rs-mega-coll.git", tag = "v0.3.0" }
+serde = "=1.0.33"
+serde_derive = "=1.0.33"
 simple_logger = "=0.5.0"
-structopt = "=0.2.4"
-structopt-derive = "=0.2.4"
+structopt = "=0.2.5"
+structopt-derive = "=0.2.5"
 
 [[bin]]
 name = "rs-fs-report"
