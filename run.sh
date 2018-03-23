@@ -1,2 +1,2 @@
-#!/usr/env/bin sh
+#!/usr/bin/env sh
 ./rs-fs-report

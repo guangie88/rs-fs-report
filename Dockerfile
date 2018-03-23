@@ -18,9 +18,9 @@ WORKDIR /app
 
 COPY --from=builder \
     /app/rs-fs-report \
-    /app/
+    ./
 
-COPY ./config/ /app/config/
+COPY ./config/ ./config/
 COPY run.sh ./
 
 ENTRYPOINT [ "./run.sh" ]
